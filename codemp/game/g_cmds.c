@@ -1742,6 +1742,25 @@ static void Cmd_VoiceCommand_f(gentity_t *ent)
 
 	if (trap->Argc() < 2)
 	{
+		char voiceCmdList[MAX_STRING_CHARS];
+		Q_strncpyz( voiceCmdList, S_COLOR_WHITE"Available voice_cmd commands:", sizeof( voiceCmdList ) );
+
+		while ( i < MAX_CUSTOM_SIEGE_SOUNDS ) {
+			if ( !bg_customSiegeSoundNames[i] ) {
+				break;
+			}
+
+			if ( i % 8 == 0 ) { // line break every 8 commands
+				Q_strcat( voiceCmdList, sizeof( voiceCmdList ), "\n    "S_COLOR_YELLOW );
+			}
+
+			Q_strcat( voiceCmdList, sizeof( voiceCmdList ), bg_customSiegeSoundNames[i] + 1 ); // skip the * character
+			Q_strcat( voiceCmdList, sizeof( voiceCmdList ), " " );
+
+			++i;
+		}
+
+		trap->SendServerCommand( ent - g_entities, va( "print \"%s\n\"", voiceCmdList ) );
 		return;
 	}
 
