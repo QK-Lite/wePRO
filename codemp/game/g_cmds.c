@@ -1532,7 +1532,7 @@ static void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, cons
 	if ( other->client->pers.connected != CON_CONNECTED ) {
 		return;
 	}
-	if ( mode == SAY_TEAM  && !OnSameTeam(ent, other) ) {
+	if ( mode == SAY_TEAM && ((level.gametype >= GT_TEAM && !OnSameTeam(ent, other)) || (level.gametype < GT_TEAM && (ent->client->sess.sessionTeam != other->client->sess.sessionTeam)))) {
 		return;
 	}
 	/*
@@ -1578,9 +1578,11 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	char		location[64];
 	char		*locMsg = NULL;
 
+	/*
 	if ( level.gametype < GT_TEAM && mode == SAY_TEAM ) {
 		mode = SAY_ALL;
 	}
+	*/
 
 	Q_strncpyz( text, chatText, sizeof(text) );
 
@@ -1681,7 +1683,8 @@ static void Cmd_SayTeam_f( gentity_t *ent ) {
 		G_SecurityLogPrintf( "Cmd_SayTeam_f from %d (%s) has been truncated: %s\n", ent->s.number, ent->client->pers.netname, p );
 	}
 
-	G_Say( ent, NULL, (level.gametype>=GT_TEAM) ? SAY_TEAM : SAY_ALL, p );
+	//G_Say( ent, NULL, (level.gametype>=GT_TEAM) ? SAY_TEAM : SAY_ALL, p );
+	G_Say( ent, NULL, SAY_TEAM, p );
 }
 
 /*
