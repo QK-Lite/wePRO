@@ -176,4 +176,10 @@ XCVAR_DEF( sv_fps,						"40",			NULL,				CVAR_ARCHIVE|CVAR_SERVERINFO,					qtrue
 XCVAR_DEF( sv_maxclients,				"8",			NULL,				CVAR_SERVERINFO|CVAR_LATCH|CVAR_ARCHIVE,		qfalse )
 XCVAR_DEF( timelimit,					"0",			NULL,				CVAR_SERVERINFO|CVAR_ARCHIVE|CVAR_NORESTART,	qtrue )
 
+// wePRO
+XCVAR_DEF( g_allowSoundPlaying,			"0",			NULL,				CVAR_ARCHIVE,									qtrue )
+XCVAR_DEF( g_allowFXPlaying,			"0",			NULL,				CVAR_ARCHIVE,									qtrue )
+XCVAR_DEF( g_allowAnimations,			"0",			NULL,				CVAR_ARCHIVE,									qtrue )
+XCVAR_DEF( g_animationsTime,			"200",			NULL,				CVAR_ARCHIVE,									qfalse )
+
 #undef XCVAR_DEF

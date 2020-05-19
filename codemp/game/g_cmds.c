@@ -3383,6 +3383,150 @@ void Cmd_AddBot_f( gentity_t *ent ) {
 	trap->SendServerCommand( ent-g_entities, va( "print \"%s.\n\"", G_GetStringEdString( "MP_SVGAME", "ONLY_ADD_BOTS_AS_SERVER" ) ) );
 }
 
+// =====================================================
+// Weapons PRO Mod - Client commands
+// -----------------------------------------------------
+// 
+// =====================================================
+
+void Cmd_PlayFX_f( gentity_t *ent ) {
+	if (!g_allowFXPlaying.integer) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^1Command not allowed!\n\""));
+		return;
+	}
+
+	if (trap->Argc() < 2) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^3Usage: playfx {^2assets directory^3}\n\""));
+		return;
+	}
+
+	// TODO ADD OPTION TO MUTE PLAYER WITH CALLVOTE !!!!
+
+	G_PlayEffectID(G_EffectIndex(ConcatArgs(1)), ent->client->renderInfo.eyePoint, ent->client->ps.viewangles);
+}
+
+void Cmd_PlaySnd_f( gentity_t *ent ) {
+	if (!g_allowSoundPlaying.integer) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^1Command not allowed!\n\""));
+		return;
+	}
+
+	if (trap->Argc() < 2) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^3Usage: playsnd {^2assets directory^3}\n\""));
+		return;
+	}
+
+	G_EntitySound(ent, CHAN_VOICE, G_SoundIndex(ConcatArgs(1)));
+}
+
+#if 0
+void Cmd_PlayMusic_f( gentity_t *ent ) {
+	if (!g_allowSoundPlaying.integer > 2) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^1Command not allowed!\n\""));
+		return;
+	}
+
+	if (trap->Argc() < 2) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^3Usage: playmusic {^2assets directory^3}\n\""));
+		return;
+	}
+
+	trap->SetConfigstring( CS_MUSIC, ConcatArgs(1) );
+}
+#endif
+
+extern stringID_table_t animTable[MAX_ANIMATIONS+1];
+void Cmd_PlayAnim_f( gentity_t *ent ) {
+	char arg[MAX_STRING_CHARS];
+	int anim;
+
+	if (!g_allowAnimations.integer) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^1Command not allowed!\n\""));
+		return;
+	}
+
+	if (trap->Argc() <= 1) {
+		trap->SendServerCommand(ent-g_entities, va("print \"^3Usage: anims {^2list ^6[starting index]^3} {^2play ^5<animation name or index>^3} {^2reset^3}\n\""));
+		return;
+	}
+
+	trap->Argv(1, arg, sizeof(arg));
+	if(Q_stricmp("list", arg) == 0) {
+		//print the first 25 animations from the index
+		int start;
+		trap->Argv(2, arg, sizeof(arg));
+		start = atoi(arg);
+		memset(arg, 0, sizeof(arg));
+
+		if (start < 0)
+			start = 0;
+		else if(start + 25 > MAX_ANIMATIONS)
+			start = MAX_ANIMATIONS - 25;
+		for(anim = start;anim<(start + 25);anim++) {
+			Q_strcat(arg, sizeof(arg), va("^5%i ^7%s\n", anim, animTable[anim].name));
+		}
+
+		trap->SendServerCommand(ent-g_entities, va("print \"^5---------------------\n\""));
+		trap->SendServerCommand(ent-g_entities, va("print \"%s\"", arg));
+		trap->SendServerCommand(ent-g_entities, va("print \"^5---------------------\n\""));
+		return;
+	}
+	else if(Q_stricmp("play", arg) == 0) {
+		if (g_allowAnimations.integer == 1) {
+			if(ent->client->ps.weaponTime > 0 || ent->client->ps.forceHandExtend != HANDEXTEND_NONE ||
+				ent->client->ps.groundEntityNum == ENTITYNUM_NONE) {
+				trap->SendServerCommand(ent-g_entities, va("print \"^3Cannot do this while busy.\n\""));
+				return;
+			}
+		}
+
+		if(trap->Argc() < 3) {
+			trap->SendServerCommand(ent-g_entities, va("print \"^3You must specify the animation name or index to play.\n\""));
+			return;
+		}
+
+		trap->Argv(2, arg, sizeof(arg));
+		anim = atoi(arg);
+		if(anim == 0 && arg[0] != '0' && arg[1] != 0) {
+			anim = GetIDForString(animTable, arg);
+		}
+
+		if(anim < 0 || anim > MAX_ANIMATIONS) {
+			trap->SendServerCommand(ent-g_entities, va("print \"^3Invalid value, you must specify the animation index to play.\n\""));
+			return;
+		}
+
+		// just in case
+		ent->client->ps.saberMove = LS_NONE;
+		ent->client->ps.saberBlocked = 0;
+		ent->client->ps.saberBlocking = 0;
+
+		G_SetAnim(ent, NULL, SETANIM_BOTH, anim, SETANIM_FLAG_OVERRIDE|SETANIM_FLAG_HOLD, 0);
+		if (g_animationsTime.integer)
+		{
+			ent->client->ps.torsoTimer = g_animationsTime.integer * 10;
+			ent->client->ps.legsTimer = g_animationsTime.integer * 10;
+		} 
+		else
+		{
+			ent->client->ps.torsoTimer = Q3_INFINITE;
+			ent->client->ps.legsTimer = Q3_INFINITE;
+		}
+
+		trap->SendServerCommand(ent-g_entities, va("print \"^2Body animation set.\n\""));
+	}
+	else if(Q_stricmp("reset", arg) == 0) {
+		ent->client->ps.torsoTimer = 0;
+		ent->client->ps.legsTimer = 0;
+		trap->SendServerCommand(ent-g_entities, va("print \"^3Your animation has been reset.\n\""));
+	}
+	else
+	{
+		trap->SendServerCommand(ent-g_entities, va("print \"^3Unknown argument.\n\""));
+		return;
+	}
+}
+
 /*
 =================
 ClientCommand
@@ -3443,6 +3587,11 @@ command_t commands[] = {
 	{ "voice_cmd",			Cmd_VoiceCommand_f,			CMD_NOINTERMISSION },
 	{ "vote",				Cmd_Vote_f,					CMD_NOINTERMISSION },
 	{ "where",				Cmd_Where_f,				CMD_NOINTERMISSION },
+
+	// wePRO
+	{ "playfx",				Cmd_PlayFX_f,				CMD_ALIVE|CMD_NOINTERMISSION },
+	{ "playsnd",			Cmd_PlaySnd_f,				CMD_ALIVE|CMD_NOINTERMISSION },
+	{ "anims",				Cmd_PlayAnim_f,				CMD_ALIVE|CMD_NOINTERMISSION },
 };
 static const size_t numCommands = ARRAY_LEN( commands );
 
